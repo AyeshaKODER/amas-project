@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+.venv_validate/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Local databases / state
+*.db
+*.sqlite
+*.sqlite3
+
+# IDEs / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Repo-local generated artifacts (created during analysis/debugging)
+_filelist_first_party.txt
+_py_files_first_party.txt
+_dotenv_keys.txt
+_env_vars_scan.json
+_scan_env_vars.py
+_tmp_*
+
+# Backup files
+*.bak
+*.bak2

@@ -1,0 +1,314 @@
+{
+  "info": {
+    "name": "AMAS Backend - End-to-End (Full Project)",
+    "_postman_id": "d7d8d7c5-5c58-4cf9-9a2c-39b8bfe45a8a",
+    "description": "End-to-end Postman collection based ONLY on FastAPI routes implemented in app/main.py and app/api.py.\n\nFastAPI routes included:\n- GET /\n- POST /agents/create\n- POST /agents/spawn\n- GET /agents\n- POST /shutdown/{agent_id}\n- POST /run\n- POST /ask\n- GET /tasks/{task_id}\n\nNotes from code behavior:\n- /ask enqueues the coordinator Celery task and long-polls until timeout_seconds.\n- /run enqueues and returns immediately.\n- /tasks/{task_id} polls Celery AsyncResult.\n- run_coordinator_task can use OpenAI or fall back to search results (and can be forced to skip OpenAI via constraints.use_openai=false).\n\nEnvironment variables required:\n- base_url (example: http://localhost:8000)\n- agent_image (example: amas_agent_template:latest)\n\nNo authentication headers are required by this codebase.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET / (API root health)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has status ok', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/",
+            "description": "Defined in app/main.py. Returns {\"status\":\"ok\",\"service\":\"AMAS Backend\"}."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ask (OpenAI-first + Search-only)",
+      "item": [
+        {
+          "name": "POST /ask (OpenAI-first; fallback to search if OpenAI fails)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 or 202', function () {",
+                  "  pm.expect([200, 202]).to.include(pm.response.code);",
+                  "});",
+                  "const j = pm.response.json();",
+                  "if (pm.response.code === 200) {",
+                  "  pm.expect(j).to.have.property('task_id');",
+                  "  pm.expect(j).to.have.property('result');",
+                  "  pm.expect(j.result).to.have.property('answer');",
+                  "  if (j.task_id) pm.environment.set('task_id', j.task_id);",
+                  "} else {",
+                  "  pm.expect(j).to.have.property('detail');",
+                  "  pm.expect(j.detail).to.have.property('task_id');",
+                  "  if (j.detail && j.detail.task_id) pm.environment.set('task_id', j.detail.task_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ask?timeout_seconds=180",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ask"
+              ],
+              "query": [
+                {
+                  "key": "timeout_seconds",
+                  "value": "180"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"Who is the current president of America?\",\n  \"requirements\": [],\n  \"constraints\": {\n    \"use_openai\": true\n  }\n}"
+            },
+            "description": "Implemented in app/api.py. Enqueues coordinator workflow and long-polls for completion.\n\nCoordinator task: app.celery_worker.run_coordinator_task\n- uses OpenAI when constraints.use_openai=true\n- falls back to a search-derived answer if OpenAI fails"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /ask (Search-only fallback / always works)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 or 202', function () {",
+                  "  pm.expect([200, 202]).to.include(pm.response.code);",
+                  "});",
+                  "const j = pm.response.json();",
+                  "if (pm.response.code === 200) {",
+                  "  pm.expect(j).to.have.property('task_id');",
+                  "  pm.expect(j).to.have.property('result');",
+                  "  pm.expect(j.result).to.have.property('answer');",
+                  "  if (j.task_id) pm.environment.set('task_id', j.task_id);",
+                  "} else {",
+                  "  pm.expect(j).to.have.property('detail');",
+                  "  pm.expect(j.detail).to.have.property('task_id');",
+                  "  if (j.detail && j.detail.task_id) pm.environment.set('task_id', j.detail.task_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ask?timeout_seconds=60",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ask"
+              ],
+              "query": [
+                {
+                  "key": "timeout_seconds",
+                  "value": "60"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"Who is the current president of America?\",\n  \"requirements\": [],\n  \"constraints\": {\n    \"use_openai\": false\n  }\n}"
+            },
+            "description": "Implemented in app/api.py. Forces coordinator workflow to skip OpenAI and return a search-derived answer.\n\nThis uses constraints.use_openai=false which is read inside app/celery_worker.py."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /tasks/{{task_id}} (poll task status/result)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('task_id is set', function () {",
+                  "  pm.expect(pm.environment.get('task_id')).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/tasks/{{task_id}}",
+            "description": "Implemented in app/api.py. Returns Celery AsyncResult state.\n\nIf ready and successful: includes result.\nIf ready and failed: includes error."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Workflow (Async enqueue + poll)",
+      "item": [
+        {
+          "name": "POST /run (enqueue only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.response.to.have.status(200);",
+                  "const j = pm.response.json();",
+                  "pm.expect(j).to.have.property('task_id');",
+                  "if (j.task_id) pm.environment.set('task_id', j.task_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/run",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"Example async workflow\",\n  \"requirements\": [],\n  \"constraints\": {\n    \"use_openai\": false\n  }\n}"
+            },
+            "description": "Implemented in app/api.py. Enqueues coordinator workflow and returns task_id immediately."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Agents",
+      "item": [
+        {
+          "name": "POST /agents/create (register agent record only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/agents/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Planner1\",\n  \"role\": \"planner\",\n  \"metadata\": {}\n}"
+            },
+            "description": "Implemented in app/api.py. Registers an agent via AgentRegistry.get_or_create. Does not spawn a Docker container."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /agents/spawn (spawn agent container + register)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.response.to.have.status(200);",
+                  "const j = pm.response.json();",
+                  "pm.expect(j).to.have.property('spawned');",
+                  "pm.expect(j.spawned).to.have.property('agent_id');",
+                  "if (j.spawned.agent_id) pm.environment.set('agent_id', j.spawned.agent_id);",
+                  "if (j.spawned.container_id) pm.environment.set('agent_container_id', j.spawned.container_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/agents/spawn",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"AutonomousPlanner\",\n  \"role\": \"planner\",\n  \"image\": \"{{agent_image}}\",\n  \"metadata\": {\n    \"autonomous_loop\": true\n  }\n}"
+            },
+            "description": "Implemented in app/api.py. Spawns an agent container via AgentSpawner.spawn_agent_container and registers it.\n\nmetadata.autonomous_loop=true triggers AGENT_AUTONOMOUS_LOOP=true inside the spawned agent container (spawner behavior)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /agents (list agents)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/agents",
+            "description": "Implemented in app/api.py. Lists agents via AgentRegistry.list_agents()."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /shutdown/{{agent_id}} (stop agent container)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('agent_id is set', function () {",
+                  "  pm.expect(pm.environment.get('agent_id')).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/shutdown/{{agent_id}}",
+            "description": "Implemented in app/api.py. Stops & removes agent container agent_<first8(agent_id)> and unregisters agent."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

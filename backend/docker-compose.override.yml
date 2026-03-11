@@ -1,0 +1,17 @@
+﻿
+services:
+  api:
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DOCKER_CONTEXT=
+      - DOCKER_TLS_VERIFY=0
+      - DOCKER_CONFIG=/tmp
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  orchestrator:
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DOCKER_CONTEXT=
+      - DOCKER_TLS_VERIFY=0
+      - DOCKER_CONFIG=/tmp

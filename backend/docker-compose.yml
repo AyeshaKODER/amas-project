@@ -1,0 +1,113 @@
+﻿
+services:
+  # API / FastAPI service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: amas_api
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    # Mount docker socket so /agents/spawn called on API can use the host Docker daemon.
+    # Use :ro for safety unless you need write access.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      DOCKER_HOST: "unix:///var/run/docker.sock"
+      DOCKER_TLS_VERIFY: ""
+      DOCKER_CERT_PATH: ""
+      DOCKER_CONTEXT: ""
+      DOCKER_CONFIG: "/tmp"
+
+    restart: unless-stopped
+
+  # Celery worker for background tasks (named as the code expects)
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    container_name: amas_celery_worker
+    env_file: .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Orchestrator (must be named 'orchestrator' to match repo references)
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.orchestrator
+    container_name: amas_orchestrator
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      DOCKER_HOST: "unix:///var/run/docker.sock"
+      DOCKER_TLS_VERIFY: ""
+      DOCKER_CERT_PATH: ""
+      DOCKER_CONTEXT: ""
+      DOCKER_CONFIG: "/tmp"
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Build a local agent template image from agents/template so orchestrator has a base image to spawn from
+  agent_template:
+    build:
+      context: .
+      dockerfile: agents/template/Dockerfile
+    image: ${AGENT_DEFAULT_IMAGE:-amas_agent_template:latest}
+    container_name: amas_agent_template_builder
+    env_file: .env
+    # No restart â€” this builds once then exits
+    restart: "no"
+
+  # Postgres DB
+  postgres:
+    image: postgres:15
+    container_name: amas_postgres
+    env_file: .env
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Redis for Celery broker / caching
+  redis:
+    image: redis:7
+    container_name: amas_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

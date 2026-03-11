@@ -1,0 +1,19 @@
+# Dockerfile.celery
+FROM python:3.11-slim
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential gcc libpq-dev curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY . /app
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# Celery app location: app.celery_worker.celery
+# The code routes key tasks (run_coordinator_task/agent_think_step/agent_store_memory/agent_plan_goal)
+# to the "coordinator" queue, so the worker must consume that queue.
+CMD ["celery", "-A", "app.celery_worker.celery", "worker", "--loglevel=info", "-Q", "coordinator", "-n", "worker.%h"]

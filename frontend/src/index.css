@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Clean Professional Color System */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Primary - Professional Blue */
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --primary-light: 221 83% 95%;
+    
+    /* Secondary - Neutral Gray */
+    --secondary: 210 10% 96%;
+    --secondary-foreground: 222 47% 11%;
+    
+    /* Accent - Subtle Highlight */
+    --accent: 210 15% 94%;
+    --accent-foreground: 222 47% 11%;
+    
+    --muted: 210 10% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+    
+    /* Status Colors */
+    --success: 142 76% 36%;
+    --success-light: 142 76% 95%;
+    --warning: 38 92% 50%;
+    --warning-light: 38 92% 95%;
+    --info: 199 89% 48%;
+    --info-light: 199 89% 95%;
+    
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 221 83% 53%;
+    
+    --radius: 0.5rem;
+    
+    /* Gradients (for landing / feature module) */
+    --hero-gradient: linear-gradient(135deg, hsl(0 0% 98%) 0%, hsl(210 100% 96%) 30%, hsl(220 20% 95%) 70%, hsl(221 83% 96%) 100%);
+    --primary-gradient: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(199 89% 55%) 100%);
+    --secondary-gradient: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(215 20% 90%) 100%);
+    --subtle-gradient: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(210 10% 98%) 50%, hsl(220 15% 96%) 100%);
+    --space-gradient: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(210 10% 98%) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    
+    /* Transitions */
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .status-running {
+    @apply bg-[hsl(var(--success-light))] text-[hsl(var(--success))];
+  }
+  
+  .status-idle {
+    @apply bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))];
+  }
+  
+  .status-error {
+    @apply bg-red-50 text-red-700;
+  }
+  
+  .status-pending {
+    @apply bg-[hsl(var(--warning-light))] text-[hsl(var(--warning))];
+  }
+  
+  .status-completed {
+    @apply bg-[hsl(var(--success-light))] text-[hsl(var(--success))];
+  }
+  
+  .status-failed {
+    @apply bg-red-50 text-red-700;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:border-[hsl(var(--primary))]/20;
+  }
+  
+  .metric-card {
+    @apply bg-card border border-border rounded-lg p-4 space-y-1;
+  }
+}
