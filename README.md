@@ -177,7 +177,7 @@ Full API docs available at `/docs` when running locally.
 
 ## 👥 Team
 
-Built with ❤️ for the IIT competition.
+Built with ❤️
 
 | Role | Contribution |
 |------|-------------|
@@ -186,6 +186,4 @@ Built with ❤️ for the IIT competition.
 
 ---
 
-## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
